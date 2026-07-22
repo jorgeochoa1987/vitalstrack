@@ -28,13 +28,13 @@ export function TopAppBar({
       .toUpperCase() || "U";
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-outline-variant bg-surface">
+    <header className="glass-bar sticky top-0 z-40 w-full border-b">
       <div className="mx-auto flex h-16 w-full max-w-5xl items-center justify-between px-container-margin">
         <div className="flex items-center gap-3">
           {backTo ? (
             <Link
               to={backTo}
-              className="rounded-full p-2 text-primary transition-colors hover:bg-surface-container-low active:opacity-80"
+              className="rounded-full p-2 text-primary transition-colors hover:bg-white/40 active:opacity-80"
               aria-label="Volver"
             >
               <CaretLeft size={24} weight="bold" />
@@ -49,7 +49,7 @@ export function TopAppBar({
           {showProfile && (
             <Link
               to="/perfil"
-              className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full border border-outline-variant bg-secondary-container transition-transform active:scale-95"
+              className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full border border-white/60 bg-secondary-container/80 shadow-sm transition-transform active:scale-95"
               aria-label="Mi perfil"
             >
               {profile?.avatarUrl ? (

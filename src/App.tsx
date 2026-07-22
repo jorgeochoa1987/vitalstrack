@@ -4,6 +4,7 @@ import { AuthProvider } from "./context/AuthContext";
 import { MeasurementsProvider } from "./context/MeasurementsContext";
 import { AppLayout } from "./layouts/AppLayout";
 import { AuthCallbackPage } from "./pages/AuthCallbackPage";
+import { AppointmentsPage } from "./pages/AppointmentsPage";
 import { ChartsPage } from "./pages/ChartsPage";
 import { DashboardPage } from "./pages/DashboardPage";
 import { HistoryPage } from "./pages/HistoryPage";
@@ -40,6 +41,7 @@ export default function App() {
           >
             <Route index element={<DashboardPage />} />
             <Route path="historial" element={<HistoryPage />} />
+            <Route path="citas" element={<AppointmentsPage />} />
             <Route path="graficos" element={<ChartsPage />} />
             <Route path="registro" element={<NewRecordPage />} />
             <Route path="registro/:id" element={<NewRecordPage />} />

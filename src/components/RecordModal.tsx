@@ -50,7 +50,7 @@ export function RecordModal({
         role="dialog"
         aria-modal="true"
         aria-labelledby="record-modal-title"
-        className="relative z-10 flex max-h-[92dvh] w-full max-w-lg flex-col rounded-t-xl border border-outline-variant/40 bg-surface-container-lowest shadow-[0_8px_40px_rgba(17,28,45,0.18)] sm:rounded-xl"
+        className="relative z-10 flex max-h-[92dvh] w-full max-w-lg flex-col rounded-t-xl border border-white/50 bg-white/75 shadow-[0_8px_40px_rgba(17,28,45,0.18)] backdrop-blur-xl sm:rounded-xl"
       >
         <div className="flex shrink-0 items-center justify-between border-b border-outline-variant/40 px-container-margin py-4">
           <div>

@@ -112,7 +112,7 @@ export function ChartsPage() {
           </div>
         </section>
 
-        <section className="rounded-lg border border-outline-variant/30 bg-surface-container-lowest p-6 shadow-[var(--shadow-card)]">
+        <section className="glass rounded-xl p-6">
           <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h2 className="text-headline-md font-semibold">Presión arterial</h2>
@@ -183,7 +183,7 @@ export function ChartsPage() {
           </div>
         </section>
 
-        <section className="rounded-lg border border-outline-variant/30 bg-surface-container-lowest p-6 shadow-[var(--shadow-card)]">
+        <section className="glass rounded-xl p-6">
           <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h2 className="text-headline-md font-semibold">

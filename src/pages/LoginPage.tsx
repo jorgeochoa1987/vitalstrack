@@ -31,11 +31,18 @@ export function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-[100dvh] flex-col bg-background">
+    <div className="relative flex min-h-[100dvh] flex-col bg-transparent">
+      <div
+        aria-hidden
+        className="pointer-events-none fixed inset-0 -z-10 overflow-hidden"
+      >
+        <div className="absolute -top-24 -left-16 h-72 w-72 rounded-full bg-primary/15 blur-3xl" />
+        <div className="absolute top-1/3 -right-20 h-80 w-80 rounded-full bg-secondary-container/70 blur-3xl" />
+      </div>
       <div className="relative flex flex-1 flex-col justify-center px-container-margin py-stack-lg">
         <div className="mx-auto w-full max-w-md space-y-stack-lg">
           <div className="space-y-3 text-center">
-            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-xl bg-primary-container text-on-primary-container">
+            <div className="glass-tint mx-auto flex h-16 w-16 items-center justify-center rounded-xl text-on-primary-container">
               <Heartbeat size={36} weight="fill" />
             </div>
             <h1 className="text-headline-lg-mobile font-bold text-primary md:text-headline-lg">
@@ -46,7 +53,7 @@ export function LoginPage() {
             </p>
           </div>
 
-          <div className="rounded-xl border border-outline-variant/40 bg-surface-container-lowest p-stack-md shadow-[var(--shadow-card)]">
+          <div className="glass rounded-xl p-stack-md">
             <p className="mb-stack-md text-center text-body-sm text-on-surface-variant">
               Inicia sesión para guardar tu historial y perfil de forma segura.
             </p>
@@ -55,7 +62,7 @@ export function LoginPage() {
               type="button"
               onClick={() => void handleGoogle()}
               disabled={busy || loading}
-              className="flex h-14 w-full items-center justify-center gap-3 rounded-lg border border-outline-variant bg-white text-body-lg font-semibold text-on-surface shadow-sm transition-transform active:scale-[0.98] disabled:opacity-60"
+              className="flex h-14 w-full items-center justify-center gap-3 rounded-lg border border-white/60 bg-white/80 text-body-lg font-semibold text-on-surface shadow-sm backdrop-blur-sm transition-transform active:scale-[0.98] disabled:opacity-60"
             >
               <GoogleIcon />
               {busy ? "Redirigiendo..." : "Continuar con Google"}

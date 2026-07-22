@@ -24,7 +24,7 @@ export function MeasurementCard({
   const valueClass = statusValueClass(status);
 
   return (
-    <div className="flex cursor-pointer items-center gap-4 rounded-lg border border-outline-variant/30 bg-surface-container-lowest p-5 shadow-[var(--shadow-card)] transition-transform active:scale-[0.98]">
+    <div className="glass flex cursor-pointer items-center gap-4 rounded-xl p-5 transition-transform active:scale-[0.98]">
       <div className={`h-16 w-2 shrink-0 rounded-full ${statusBarClass(status)}`} />
       {measurement.photoUrl && (
         <img

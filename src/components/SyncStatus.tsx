@@ -13,7 +13,7 @@ export function SyncStatus({
 }: SyncStatusProps) {
   if (loading) {
     return (
-      <div className="rounded-lg border border-outline-variant/40 bg-surface-container-low px-4 py-3 text-body-sm text-secondary">
+      <div className="glass-soft rounded-xl px-4 py-3 text-body-sm text-secondary">
         Sincronizando con Supabase...
       </div>
     );

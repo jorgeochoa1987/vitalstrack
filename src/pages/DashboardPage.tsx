@@ -133,7 +133,7 @@ export function DashboardPage() {
         </section>
 
         {latest ? (
-          <section className="relative overflow-hidden rounded-lg border border-white/30 bg-surface-container-lowest/80 p-3 shadow-[var(--shadow-card)] backdrop-blur-sm sm:p-4">
+          <section className="glass relative overflow-hidden rounded-xl p-3 sm:p-4">
             <div className="mb-3 flex items-center justify-between gap-2">
               <div className="min-w-0">
                 <h3 className="text-[10px] font-semibold uppercase tracking-[0.04em] text-secondary sm:text-label-bold sm:tracking-[0.05em]">
@@ -197,7 +197,7 @@ export function DashboardPage() {
             </div>
           </section>
         ) : (
-          <section className="rounded-lg border border-outline-variant/30 bg-surface-container-lowest p-3 shadow-[var(--shadow-card)] sm:p-4">
+          <section className="glass rounded-xl p-3 sm:p-4">
             <p className="text-body-sm text-secondary sm:text-body-lg">
               Aún no hay mediciones. Pulsa + para registrar la primera.
             </p>
@@ -209,9 +209,9 @@ export function DashboardPage() {
             Promedio semanal
           </h3>
           <div className="grid grid-cols-2 gap-3">
-            <div className="rounded-lg border border-outline-variant bg-surface-container-lowest p-3 shadow-[var(--shadow-card)] sm:p-4">
+            <div className="glass rounded-xl p-3 sm:p-4">
               <div className="mb-2 flex items-center justify-between gap-1">
-                <div className="rounded-md bg-surface-container-high p-1.5 text-primary">
+                <div className="rounded-md bg-white/50 p-1.5 text-primary">
                   <TrendUp size={16} />
                 </div>
                 <DeltaBadge value={stats.sysDelta} betterWhen="down" />
@@ -229,9 +229,9 @@ export function DashboardPage() {
               </div>
             </div>
 
-            <div className="rounded-lg border border-outline-variant bg-surface-container-lowest p-3 shadow-[var(--shadow-card)] sm:p-4">
+            <div className="glass rounded-xl p-3 sm:p-4">
               <div className="mb-2 flex items-center justify-between gap-1">
-                <div className="rounded-md bg-surface-container-high p-1.5 text-secondary">
+                <div className="rounded-md bg-white/50 p-1.5 text-secondary">
                   <ChartBar size={16} />
                 </div>
                 <DeltaBadge value={stats.diaDelta} betterWhen="down" />
@@ -253,8 +253,8 @@ export function DashboardPage() {
 
         <section className="grid grid-cols-2 gap-3">
           <Link
-            to="/perfil"
-            className="flex min-h-0 flex-col gap-1 rounded-lg bg-primary-container p-3 transition-opacity hover:opacity-95 sm:p-4"
+            to="/citas"
+            className="glass-tint flex min-h-0 flex-col gap-1 rounded-xl p-3 transition-opacity hover:opacity-95 sm:p-4"
           >
             <div className="flex items-center gap-1.5">
               <Heartbeat
@@ -274,8 +274,8 @@ export function DashboardPage() {
           </Link>
 
           <Link
-            to="/perfil"
-            className="flex min-h-0 flex-col gap-1 rounded-lg border border-outline-variant bg-surface-container-highest p-3 transition-colors hover:bg-surface-container-high sm:p-4"
+            to="/citas"
+            className="glass flex min-h-0 flex-col gap-1 rounded-xl p-3 transition-colors hover:bg-white/60 sm:p-4"
           >
             <div className="flex items-center gap-1.5">
               <CalendarBlank size={18} className="shrink-0 text-primary" />
@@ -313,7 +313,7 @@ export function DashboardPage() {
               <article
                 key={tip.id}
                 data-tip-slide
-                className="w-[min(100%,20rem)] shrink-0 snap-center rounded-lg border border-outline-variant/50 bg-surface-container-lowest p-3 shadow-[var(--shadow-card)] sm:w-[22rem] sm:p-4"
+                className="glass w-[min(100%,20rem)] shrink-0 snap-center rounded-xl p-3 sm:w-[22rem] sm:p-4"
               >
                 <p className="text-[10px] font-semibold uppercase tracking-[0.05em] text-primary">
                   {i === 0 ? "Tip del día" : `Tip ${i + 1}`}

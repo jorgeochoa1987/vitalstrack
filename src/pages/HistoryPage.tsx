@@ -106,7 +106,7 @@ export function HistoryPage() {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Buscar mediciones..."
-              className="h-12 w-full rounded-lg border border-outline-variant bg-surface-container-lowest pr-4 pl-12 text-body-lg transition-all focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none"
+              className="glass h-12 w-full rounded-xl border-white/50 pr-4 pl-12 text-body-lg transition-colors focus:border-primary/40 focus:ring-1 focus:ring-primary/30 focus:outline-none"
             />
           </div>
         </div>
