@@ -51,7 +51,7 @@ export function DashboardPage() {
   const nextMeasure = useMemo(
     () => getNextMeasure(schedule, latest?.recordedAt),
     [schedule, latest?.recordedAt],
-  );
+  ); 
   const nextAppointment = useMemo(
     () => getNextAppointment(schedule),
     [schedule],
