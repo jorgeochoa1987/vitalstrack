@@ -29,7 +29,9 @@ import {
 import { resolvePhotoUrl } from "../lib/photo";
 import {
   completeCurrentAppointment,
+  formatAppointmentDate,
   formatAppointmentFull,
+  formatMeasureTime,
   loadSchedule,
   todayIso,
   upsertNextAppointment,
@@ -273,24 +275,46 @@ export function AppointmentsPage() {
   return (
     <>
       <TopAppBar title="Cita y exámenes" backTo="/" />
-      <main className="mx-auto max-w-2xl px-container-margin py-stack-md pb-32">
+      <main className="mx-auto max-w-2xl space-y-3 px-container-margin py-stack-md pb-32">
+        {/* Resumen aparte: qué cita tienes */}
+        <section className="glass-tint rounded-xl p-4 text-on-primary-container">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.05em] text-on-primary-container/80">
+            Tu próxima cita
+          </p>
+          {appointmentDate ? (
+            <>
+              <p className="mt-1 text-headline-md font-semibold text-white">
+                {formatAppointmentDate(appointmentDate)}
+              </p>
+              <p className="mt-0.5 text-body-sm text-on-primary-container/90">
+                {formatMeasureTime(appointmentTime || "09:00")}
+                {appointmentAddress ? ` · ${appointmentAddress}` : ""}
+              </p>
+              <p className="mt-2 text-[11px] text-on-primary-container/70">
+                {syncing
+                  ? "Sincronizando…"
+                  : syncNote || "Guardada en tu cuenta"}
+              </p>
+            </>
+          ) : (
+            <p className="mt-1 text-body-lg text-on-primary-container/90">
+              Aún no tienes una cita programada. Completa el formulario abajo.
+            </p>
+          )}
+        </section>
+
         <section className="glass space-y-4 rounded-xl p-4">
-          {/* Cita */}
           <div>
             <h2 className="text-body-lg font-semibold text-on-surface">
-              Próxima cita
+              Programar / editar
             </h2>
             <p className="mt-0.5 text-[11px] text-secondary">
-              Un solo lugar para la cita y los exámenes con foto.
-              {syncing
-                ? " · Sincronizando…"
-                : syncNote
-                  ? ` · ${syncNote}`
-                  : ""}
+              Fecha, hora y lugar. Luego Guardar.
             </p>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          {/* En iPhone: una columna para que date/time no se desborden */}
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <Field label="Fecha *" htmlFor="apt-date">
               <input
                 id="apt-date"
@@ -301,7 +325,7 @@ export function AppointmentsPage() {
                   setAppointmentDate(e.target.value);
                   setError(null);
                 }}
-                className="field-input !h-11 !text-body-sm"
+                className="field-input !h-11 min-w-0 max-w-full !text-body-sm"
               />
             </Field>
             <Field label="Hora" htmlFor="apt-time">
@@ -310,22 +334,10 @@ export function AppointmentsPage() {
                 type="time"
                 value={appointmentTime}
                 onChange={(e) => setAppointmentTime(e.target.value)}
-                className="field-input !h-11 !text-body-sm"
+                className="field-input !h-11 min-w-0 max-w-full !text-body-sm"
               />
             </Field>
           </div>
-
-          {appointmentDate ? (
-            <p className="rounded-lg border border-primary/20 bg-primary/10 px-3 py-2 text-body-sm text-primary">
-              Próxima cita: <strong>{appointmentDate}</strong>
-              {appointmentTime ? ` · ${appointmentTime}` : ""}
-              {appointmentAddress ? ` · ${appointmentAddress}` : ""}
-            </p>
-          ) : (
-            <p className="text-[11px] text-secondary">
-              Toca <strong>Fecha</strong> y elige el día, luego pulsa Guardar.
-            </p>
-          )}
 
           <Field label="Dirección" htmlFor="apt-address">
             <input
@@ -333,7 +345,7 @@ export function AppointmentsPage() {
               type="text"
               value={appointmentAddress}
               onChange={(e) => setAppointmentAddress(e.target.value)}
-              className="field-input !h-11 !text-body-sm"
+              className="field-input !h-11 min-w-0 max-w-full !text-body-sm"
               placeholder="Clínica o consultorio"
             />
           </Field>
@@ -344,22 +356,22 @@ export function AppointmentsPage() {
             </p>
           )}
 
-          <div className="flex gap-2">
+          <div className="flex flex-col gap-2 sm:flex-row">
             <button
               type="button"
               onClick={() => void saveAppointment()}
               disabled={saving || syncing}
-              className="flex h-11 flex-1 items-center justify-center gap-2 rounded-lg bg-primary text-body-sm font-semibold text-on-primary disabled:opacity-60"
+              className="flex h-11 w-full flex-1 items-center justify-center gap-2 rounded-lg bg-primary text-body-sm font-semibold text-on-primary disabled:opacity-60"
             >
               <FloppyDisk size={18} />
-              {saving ? "Guardando…" : "Guardar"}
+              {saving ? "Guardando…" : "Guardar cita"}
             </button>
             {appointmentDate ? (
               <button
                 type="button"
                 onClick={() => void markDone()}
                 disabled={saving}
-                className="flex h-11 items-center justify-center gap-1 rounded-lg border border-white/50 bg-white/35 px-3 text-body-sm font-semibold text-secondary backdrop-blur-sm disabled:opacity-60"
+                className="flex h-11 w-full items-center justify-center gap-1 rounded-lg border border-white/50 bg-white/35 px-3 text-body-sm font-semibold text-secondary backdrop-blur-sm disabled:opacity-60 sm:w-auto"
               >
                 <Check size={16} weight="bold" />
                 Ya fui
@@ -656,7 +668,7 @@ function Field({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex flex-col gap-1">
+    <div className="flex min-w-0 flex-col gap-1">
       <label
         htmlFor={htmlFor}
         className="text-[11px] font-semibold uppercase tracking-[0.04em] text-on-surface-variant"
