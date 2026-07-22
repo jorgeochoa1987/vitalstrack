@@ -28,6 +28,7 @@ import {
 } from "../lib/exams";
 import { resolvePhotoUrl } from "../lib/photo";
 import {
+  CADENCE_OPTIONS,
   completeCurrentAppointment,
   formatAppointmentDate,
   formatAppointmentFull,
@@ -36,6 +37,7 @@ import {
   todayIso,
   upsertNextAppointment,
   type Appointment,
+  type ReportCadence,
 } from "../lib/reportSchedule";
 
 interface DraftExam {
@@ -61,6 +63,9 @@ export function AppointmentsPage() {
   const [appointmentDate, setAppointmentDate] = useState("");
   const [appointmentTime, setAppointmentTime] = useState("09:00");
   const [appointmentAddress, setAppointmentAddress] = useState("");
+  const [cadence, setCadence] = useState<ReportCadence>("pre_cita_7");
+  const [customDays, setCustomDays] = useState(5);
+  const [measureTime, setMeasureTime] = useState("08:00");
   const [history, setHistory] = useState<Appointment[]>([]);
   const [exams, setExams] = useState<Exam[]>([]);
 
@@ -89,6 +94,9 @@ export function AppointmentsPage() {
       setAppointmentDate(result.schedule.nextAppointment?.date ?? "");
       setAppointmentTime(result.schedule.nextAppointment?.time ?? "09:00");
       setAppointmentAddress(result.schedule.nextAppointment?.address ?? "");
+      setCadence(result.schedule.cadence);
+      setCustomDays(result.schedule.customDays);
+      setMeasureTime(result.schedule.measureTime);
       setHistory(result.schedule.appointmentHistory);
       setExams(result.exams);
       setSyncNote(
@@ -114,6 +122,9 @@ export function AppointmentsPage() {
     setAppointmentDate(schedule.nextAppointment?.date ?? "");
     setAppointmentTime(schedule.nextAppointment?.time ?? "09:00");
     setAppointmentAddress(schedule.nextAppointment?.address ?? "");
+    setCadence(schedule.cadence);
+    setCustomDays(schedule.customDays);
+    setMeasureTime(schedule.measureTime);
     setExams(nextExams);
   }
 
@@ -153,34 +164,44 @@ export function AppointmentsPage() {
       showMsg("Sin sesión — no se pudo guardar");
       return;
     }
-    if (!appointmentDate.trim()) {
-      setError("Elige la fecha de tu próxima cita (toca el campo Fecha).");
-      showMsg("Falta la fecha");
-      return;
-    }
     setError(null);
     setSaving(true);
     try {
       let next = loadSchedule(user.id);
-      next = upsertNextAppointment(
-        next,
-        appointmentDate.trim(),
-        appointmentTime || "09:00",
-        { address: appointmentAddress },
-      );
-      const examsAfter = syncExamDueDatesToAppointment(
-        user.id,
-        next.nextAppointment?.date ?? "",
-      );
-      const result = await persistAll(next, examsAfter);
-      if (!result.schedule.nextAppointment?.date) {
-        setError(
-          "Se guardó pero no aparece como próxima. ¿La fecha ya pasó? Usa hoy o una fecha futura.",
+      next = {
+        ...next,
+        cadence,
+        customDays: Math.max(1, Math.min(90, Math.round(customDays) || 5)),
+        measureTime,
+      };
+
+      const date = appointmentDate.trim();
+      if (date) {
+        next = upsertNextAppointment(next, date, appointmentTime || "09:00", {
+          address: appointmentAddress,
+        });
+        const examsAfter = syncExamDueDatesToAppointment(
+          user.id,
+          next.nextAppointment?.date ?? "",
         );
-        showMsg("Revisa la fecha de la cita");
-        return;
+        const result = await persistAll(next, examsAfter);
+        if (!result.schedule.nextAppointment?.date) {
+          setError(
+            "Se guardó pero no aparece como próxima. ¿La fecha ya pasó? Usa hoy o una fecha futura.",
+          );
+          showMsg("Revisa la fecha de la cita");
+          return;
+        }
+        showMsg(`Guardado · cita ${result.schedule.nextAppointment.date}`);
+      } else {
+        const result = await persistAll(next, loadExams(user.id));
+        showMsg(
+          `Tomas guardadas · ${
+            CADENCE_OPTIONS.find((o) => o.value === result.schedule.cadence)
+              ?.label ?? "frecuencia"
+          }`,
+        );
       }
-      showMsg(`Cita guardada · ${result.schedule.nextAppointment.date}`);
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "No se pudo guardar la cita",
@@ -322,10 +343,23 @@ export function AppointmentsPage() {
                   Sin exámenes pendientes registrados
                 </p>
               )}
+              <p className="mt-2 text-[11px] text-on-primary-container/75">
+                Toma de tensión:{" "}
+                {CADENCE_OPTIONS.find((o) => o.value === cadence)?.label ??
+                  cadence}{" "}
+                · {formatMeasureTime(measureTime)}
+              </p>
               <p className="mt-2 text-[11px] text-on-primary-container/70">
                 {syncing
                   ? "Sincronizando…"
                   : syncNote || "Guardada en tu cuenta"}
+                {" · "}
+                <a
+                  href="#editar-cita"
+                  className="font-semibold underline decoration-white/40 underline-offset-2"
+                >
+                  Editar abajo
+                </a>
               </p>
             </>
           ) : (
@@ -335,13 +369,16 @@ export function AppointmentsPage() {
           )}
         </section>
 
-        <section className="glass space-y-4 rounded-xl p-4">
+        <section
+          id="editar-cita"
+          className="glass scroll-mt-4 space-y-4 rounded-xl p-4"
+        >
           <div>
             <h2 className="text-body-lg font-semibold text-on-surface">
-              Programar / editar
+              Editar cita
             </h2>
             <p className="mt-0.5 text-[11px] text-secondary">
-              Fecha, hora y lugar. Luego Guardar.
+              Cambia fecha, hora o lugar y pulsa Guardar.
             </p>
           </div>
 
@@ -382,6 +419,71 @@ export function AppointmentsPage() {
             />
           </Field>
 
+          <div className="border-t border-white/40 pt-3">
+            <h3 className="text-body-sm font-semibold text-on-surface">
+              Toma de tensión
+            </h3>
+            <p className="mt-0.5 text-[11px] text-secondary">
+              Cada cuánto te recuerda medir y a qué hora.
+            </p>
+
+            <div className="mt-3 grid grid-cols-2 gap-2">
+              {CADENCE_OPTIONS.map((opt) => {
+                const selected = cadence === opt.value;
+                return (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => setCadence(opt.value)}
+                    className={[
+                      "rounded-lg border px-2.5 py-2 text-left transition-colors",
+                      selected
+                        ? "border-primary bg-primary/10 text-primary"
+                        : "border-white/50 bg-white/35 text-on-surface",
+                    ].join(" ")}
+                  >
+                    <span className="block text-[12px] font-semibold leading-tight">
+                      {opt.label}
+                    </span>
+                    <span className="mt-0.5 block text-[10px] leading-snug opacity-75">
+                      {opt.hint}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {cadence === "custom" ? (
+              <div className="mt-3">
+                <Field label="Cada cuántos días" htmlFor="custom-days">
+                  <input
+                    id="custom-days"
+                    type="number"
+                    min={1}
+                    max={90}
+                    value={customDays}
+                    onChange={(e) =>
+                      setCustomDays(Number(e.target.value) || 1)
+                    }
+                    className="field-input !h-11 min-w-0 max-w-full !text-body-sm"
+                  />
+                </Field>
+              </div>
+            ) : null}
+
+            <div className="mt-3">
+              <Field label="Hora preferida de la toma" htmlFor="measure-time">
+                <input
+                  id="measure-time"
+                  type="time"
+                  value={measureTime}
+                  onChange={(e) => setMeasureTime(e.target.value)}
+                  className="field-input !h-11 min-w-0 max-w-full !text-body-sm"
+                />
+              </Field>
+            </div>
+          </div>
+
           {error && (
             <p className="rounded-lg bg-error-container/90 px-3 py-2 text-body-sm text-on-error-container backdrop-blur-sm">
               {error}
@@ -396,7 +498,7 @@ export function AppointmentsPage() {
               className="flex h-11 w-full flex-1 items-center justify-center gap-2 rounded-lg bg-primary text-body-sm font-semibold text-on-primary disabled:opacity-60"
             >
               <FloppyDisk size={18} />
-              {saving ? "Guardando…" : "Guardar cita"}
+              {saving ? "Guardando…" : "Guardar cita y tomas"}
             </button>
             {appointmentDate ? (
               <button

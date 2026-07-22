@@ -445,7 +445,7 @@ export function getNextAppointment(
       configured: false,
       daysUntil: NaN,
       headline: "Sin fecha",
-      detail: "Configura tu cita en el perfil",
+      detail: "Configura tu cita en Cita",
     };
   }
 
