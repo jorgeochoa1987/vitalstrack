@@ -22,17 +22,36 @@ import {
   inLastDays,
   weekAgo,
 } from "../lib/bp";
+import { syncPrefsFromCloud } from "../lib/cloudPrefs";
 import {
   getNextAppointment,
   getNextMeasure,
   loadSchedule,
-  saveSchedule,
+  type ReportSchedule,
 } from "../lib/reportSchedule";
 
 export function DashboardPage() {
   const { profile, user } = useAuth();
   const { measurements, loading, error, usingLocal, refresh } =
     useMeasurements();
+  const [schedule, setSchedule] = useState<ReportSchedule>(() =>
+    loadSchedule(user?.id),
+  );
+
+  useEffect(() => {
+    if (!user?.id) {
+      setSchedule(loadSchedule(null));
+      return;
+    }
+    let cancelled = false;
+    void (async () => {
+      const result = await syncPrefsFromCloud(user.id);
+      if (!cancelled) setSchedule(result.schedule);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id]);
 
   const latest = measurements[0];
   const status = latest
@@ -44,14 +63,10 @@ export function DashboardPage() {
     profile?.email?.split("@")[0] ||
     "";
 
-  const schedule = useMemo(() => {
-    if (!user?.id) return loadSchedule(null);
-    return saveSchedule(user.id, loadSchedule(user.id));
-  }, [user?.id]);
   const nextMeasure = useMemo(
     () => getNextMeasure(schedule, latest?.recordedAt),
     [schedule, latest?.recordedAt],
-  ); 
+  );
   const nextAppointment = useMemo(
     () => getNextAppointment(schedule),
     [schedule],

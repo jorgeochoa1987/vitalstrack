@@ -12,6 +12,7 @@ import { Toast } from "../components/Toast";
 import { TopAppBar } from "../components/TopAppBar";
 import { useAuth } from "../context/AuthContext";
 import { useMeasurements } from "../context/MeasurementsContext";
+import { persistPrefs, syncPrefsFromCloud } from "../lib/cloudPrefs";
 import {
   EXAM_LEAD_DAYS,
   addExamsBatch,
@@ -30,7 +31,6 @@ import {
   completeCurrentAppointment,
   formatAppointmentFull,
   loadSchedule,
-  saveSchedule,
   todayIso,
   upsertNextAppointment,
   type Appointment,
@@ -69,19 +69,63 @@ export function AppointmentsPage() {
   const [toastMessage, setToastMessage] = useState("");
   const [error, setError] = useState<string | null>(null);
 
+  const [syncNote, setSyncNote] = useState<string | null>(null);
+  const [syncing, setSyncing] = useState(false);
+
   const cameraRef = useRef<HTMLInputElement>(null);
   const galleryRef = useRef<HTMLInputElement>(null);
   const activeDraftKey = useRef<string | null>(null);
 
   useEffect(() => {
     if (!user?.id) return;
-    const s = saveSchedule(user.id, loadSchedule(user.id));
-    setAppointmentDate(s.nextAppointment?.date ?? "");
-    setAppointmentTime(s.nextAppointment?.time ?? "09:00");
-    setAppointmentAddress(s.nextAppointment?.address ?? "");
-    setHistory(s.appointmentHistory);
-    setExams(loadExams(user.id));
+    let cancelled = false;
+
+    (async () => {
+      setSyncing(true);
+      const result = await syncPrefsFromCloud(user.id);
+      if (cancelled) return;
+      setAppointmentDate(result.schedule.nextAppointment?.date ?? "");
+      setAppointmentTime(result.schedule.nextAppointment?.time ?? "09:00");
+      setAppointmentAddress(result.schedule.nextAppointment?.address ?? "");
+      setHistory(result.schedule.appointmentHistory);
+      setExams(result.exams);
+      setSyncNote(
+        result.error
+          ? result.error
+          : result.cloud
+            ? "Sincronizado con tu cuenta (cel y PC)"
+            : null,
+      );
+      setSyncing(false);
+    })();
+
+    return () => {
+      cancelled = true;
+    };
   }, [user?.id]);
+
+  function applyFromSchedule(
+    schedule: ReturnType<typeof loadSchedule>,
+    nextExams: Exam[],
+  ) {
+    setHistory(schedule.appointmentHistory);
+    setAppointmentDate(schedule.nextAppointment?.date ?? "");
+    setAppointmentTime(schedule.nextAppointment?.time ?? "09:00");
+    setAppointmentAddress(schedule.nextAppointment?.address ?? "");
+    setExams(nextExams);
+  }
+
+  async function persistAll(
+    schedule: ReturnType<typeof loadSchedule>,
+    nextExams: Exam[],
+  ) {
+    if (!user?.id) throw new Error("Sin sesión");
+    const result = await persistPrefs(user.id, schedule, nextExams);
+    applyFromSchedule(result.schedule, result.exams);
+    if (result.error) setSyncNote(result.error);
+    else setSyncNote("Sincronizado con tu cuenta (cel y PC)");
+    return result;
+  }
 
   function showMsg(msg: string) {
     setToastMessage(msg);
@@ -101,44 +145,64 @@ export function AppointmentsPage() {
       : dueWithoutAppointment();
   }
 
-  function saveAppointment() {
-    if (!user?.id) return;
-    if (!appointmentDate) {
-      setError("Elige la fecha de tu próxima cita.");
+  async function saveAppointment() {
+    if (!user?.id) {
+      setError("No hay sesión. Recarga la página e inicia sesión otra vez.");
+      showMsg("Sin sesión — no se pudo guardar");
+      return;
+    }
+    if (!appointmentDate.trim()) {
+      setError("Elige la fecha de tu próxima cita (toca el campo Fecha).");
+      showMsg("Falta la fecha");
       return;
     }
     setError(null);
-    let next = loadSchedule(user.id);
-    next = upsertNextAppointment(next, appointmentDate, appointmentTime, {
-      address: appointmentAddress,
-    });
-    const saved = saveSchedule(user.id, next);
-    setHistory(saved.appointmentHistory);
-    setAppointmentDate(saved.nextAppointment?.date ?? "");
-    setAppointmentTime(saved.nextAppointment?.time ?? "09:00");
-    setAppointmentAddress(saved.nextAppointment?.address ?? "");
-    setExams(
-      syncExamDueDatesToAppointment(
+    setSaving(true);
+    try {
+      let next = loadSchedule(user.id);
+      next = upsertNextAppointment(
+        next,
+        appointmentDate.trim(),
+        appointmentTime || "09:00",
+        { address: appointmentAddress },
+      );
+      const examsAfter = syncExamDueDatesToAppointment(
         user.id,
-        saved.nextAppointment?.date ?? "",
-      ),
-    );
-    showMsg("Cita guardada");
+        next.nextAppointment?.date ?? "",
+      );
+      const result = await persistAll(next, examsAfter);
+      if (!result.schedule.nextAppointment?.date) {
+        setError(
+          "Se guardó pero no aparece como próxima. ¿La fecha ya pasó? Usa hoy o una fecha futura.",
+        );
+        showMsg("Revisa la fecha de la cita");
+        return;
+      }
+      showMsg(`Cita guardada · ${result.schedule.nextAppointment.date}`);
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "No se pudo guardar la cita",
+      );
+      showMsg("Error al guardar");
+    } finally {
+      setSaving(false);
+    }
   }
 
-  function markDone() {
+  async function markDone() {
     if (!user?.id) return;
-    const saved = saveSchedule(
-      user.id,
-      completeCurrentAppointment(loadSchedule(user.id)),
-    );
-    setHistory(saved.appointmentHistory);
-    setAppointmentDate("");
-    setAppointmentTime("09:00");
-    setAppointmentAddress("");
-    setDrafts([newDraft()]);
-    setShowExamWizard(true);
-    showMsg("Cita pasada al histórico");
+    setSaving(true);
+    try {
+      const next = completeCurrentAppointment(loadSchedule(user.id));
+      await persistAll(next, loadExams(user.id));
+      setDrafts([newDraft()]);
+      setShowExamWizard(true);
+      showMsg("Cita pasada al histórico");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "No se pudo actualizar");
+    } finally {
+      setSaving(false);
+    }
   }
 
   function applyPhoto(key: string, file: File) {
@@ -183,7 +247,8 @@ export function AppointmentsPage() {
           photoUrl,
         });
       }
-      setExams(addExamsBatch(user.id, items));
+      const nextExams = addExamsBatch(user.id, items);
+      await persistAll(loadSchedule(user.id), nextExams);
       for (const d of drafts) {
         if (d.preview?.startsWith("blob:")) URL.revokeObjectURL(d.preview);
       }
@@ -217,16 +282,25 @@ export function AppointmentsPage() {
             </h2>
             <p className="mt-0.5 text-[11px] text-secondary">
               Un solo lugar para la cita y los exámenes con foto.
+              {syncing
+                ? " · Sincronizando…"
+                : syncNote
+                  ? ` · ${syncNote}`
+                  : ""}
             </p>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
-            <Field label="Fecha" htmlFor="apt-date">
+            <Field label="Fecha *" htmlFor="apt-date">
               <input
                 id="apt-date"
                 type="date"
+                required
                 value={appointmentDate}
-                onChange={(e) => setAppointmentDate(e.target.value)}
+                onChange={(e) => {
+                  setAppointmentDate(e.target.value);
+                  setError(null);
+                }}
                 className="field-input !h-11 !text-body-sm"
               />
             </Field>
@@ -240,6 +314,18 @@ export function AppointmentsPage() {
               />
             </Field>
           </div>
+
+          {appointmentDate ? (
+            <p className="rounded-lg border border-primary/20 bg-primary/10 px-3 py-2 text-body-sm text-primary">
+              Próxima cita: <strong>{appointmentDate}</strong>
+              {appointmentTime ? ` · ${appointmentTime}` : ""}
+              {appointmentAddress ? ` · ${appointmentAddress}` : ""}
+            </p>
+          ) : (
+            <p className="text-[11px] text-secondary">
+              Toca <strong>Fecha</strong> y elige el día, luego pulsa Guardar.
+            </p>
+          )}
 
           <Field label="Dirección" htmlFor="apt-address">
             <input
@@ -261,17 +347,19 @@ export function AppointmentsPage() {
           <div className="flex gap-2">
             <button
               type="button"
-              onClick={saveAppointment}
-              className="flex h-11 flex-1 items-center justify-center gap-2 rounded-lg bg-primary text-body-sm font-semibold text-on-primary"
+              onClick={() => void saveAppointment()}
+              disabled={saving || syncing}
+              className="flex h-11 flex-1 items-center justify-center gap-2 rounded-lg bg-primary text-body-sm font-semibold text-on-primary disabled:opacity-60"
             >
               <FloppyDisk size={18} />
-              Guardar
+              {saving ? "Guardando…" : "Guardar"}
             </button>
             {appointmentDate ? (
               <button
                 type="button"
-                onClick={markDone}
-                className="flex h-11 items-center justify-center gap-1 rounded-lg border border-white/50 bg-white/35 px-3 text-body-sm font-semibold text-secondary backdrop-blur-sm"
+                onClick={() => void markDone()}
+                disabled={saving}
+                className="flex h-11 items-center justify-center gap-1 rounded-lg border border-white/50 bg-white/35 px-3 text-body-sm font-semibold text-secondary backdrop-blur-sm disabled:opacity-60"
               >
                 <Check size={16} weight="bold" />
                 Ya fui
@@ -452,8 +540,11 @@ export function AppointmentsPage() {
                       type="button"
                       onClick={() => {
                         if (!user?.id) return;
-                        setExams(markExamDone(user.id, exam.id));
-                        showMsg("Examen hecho");
+                        void (async () => {
+                          const nextExams = markExamDone(user.id, exam.id);
+                          await persistAll(loadSchedule(user.id), nextExams);
+                          showMsg("Examen hecho");
+                        })();
                       }}
                       className="shrink-0 text-[10px] font-semibold uppercase text-primary"
                     >
@@ -464,7 +555,10 @@ export function AppointmentsPage() {
                       aria-label="Eliminar"
                       onClick={() => {
                         if (!user?.id) return;
-                        setExams(removeExam(user.id, exam.id));
+                        void (async () => {
+                          const nextExams = removeExam(user.id, exam.id);
+                          await persistAll(loadSchedule(user.id), nextExams);
+                        })();
                       }}
                       className="shrink-0 p-1 text-secondary hover:text-error"
                     >

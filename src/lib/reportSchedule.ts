@@ -66,9 +66,15 @@ export function calendarDaysUntil(targetIso: string, from = new Date()): number 
 }
 
 export function normalizeTime(value: string | undefined, fallback = "08:00"): string {
-  if (!value || !/^\d{1,2}:\d{2}$/.test(value)) return fallback;
-  const [h, m] = value.split(":").map(Number);
-  if (h < 0 || h > 23 || m < 0 || m > 59) return fallback;
+  if (!value) return fallback;
+  // Safari a veces envía HH:mm:ss
+  const match = value.trim().match(/^(\d{1,2}):(\d{2})(?::\d{2})?$/);
+  if (!match) return fallback;
+  const h = Number(match[1]);
+  const m = Number(match[2]);
+  if (Number.isNaN(h) || Number.isNaN(m) || h < 0 || h > 23 || m < 0 || m > 59) {
+    return fallback;
+  }
   return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
 }
 
@@ -233,7 +239,15 @@ export function saveSchedule(
       : null,
     appointmentHistory: archived.appointmentHistory,
   };
-  localStorage.setItem(STORAGE_PREFIX + userId, JSON.stringify(next));
+  try {
+    localStorage.setItem(STORAGE_PREFIX + userId, JSON.stringify(next));
+  } catch (err) {
+    const message =
+      err instanceof Error ? err.message : "No se pudo guardar en este dispositivo";
+    throw new Error(
+      `Almacenamiento lleno o bloqueado. Borra fotos de exámenes grandes e intenta de nuevo. (${message})`,
+    );
+  }
   return next;
 }
 

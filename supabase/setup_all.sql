@@ -167,4 +167,11 @@ create policy "Photos public read"
   on storage.objects for select to public
   using (bucket_id = 'measurement-photos');
 
+-- Citas / exámenes sync entre dispositivos
+alter table public.profiles
+  add column if not exists schedule_json jsonb;
+
+alter table public.profiles
+  add column if not exists exams_json jsonb;
+
 notify pgrst, 'reload schema';
