@@ -13,16 +13,19 @@ import { SyncStatus } from "../components/SyncStatus";
 import { TopAppBar } from "../components/TopAppBar";
 import { useAuth } from "../context/AuthContext";
 import { useMeasurements } from "../context/MeasurementsContext";
-import { HEALTH_TIPS, tipOfTheDay } from "../data/healthTips";
+import { tipOfTheDay } from "../data/healthTips";
 import {
   average,
+  BP_SCALE_SLIDES,
   formatBp,
   formatDateTime,
   getBpStatus,
   inLastDays,
+  statusContainerClass,
   weekAgo,
 } from "../lib/bp";
 import { syncPrefsFromCloud } from "../lib/cloudPrefs";
+import { loadExams, pendingExams, type Exam } from "../lib/exams";
 import {
   getNextAppointment,
   getNextMeasure,
@@ -37,16 +40,21 @@ export function DashboardPage() {
   const [schedule, setSchedule] = useState<ReportSchedule>(() =>
     loadSchedule(user?.id),
   );
+  const [exams, setExams] = useState<Exam[]>(() => loadExams(user?.id));
 
   useEffect(() => {
     if (!user?.id) {
       setSchedule(loadSchedule(null));
+      setExams([]);
       return;
     }
     let cancelled = false;
     void (async () => {
       const result = await syncPrefsFromCloud(user.id);
-      if (!cancelled) setSchedule(result.schedule);
+      if (!cancelled) {
+        setSchedule(result.schedule);
+        setExams(result.exams);
+      }
     })();
     return () => {
       cancelled = true;
@@ -71,11 +79,20 @@ export function DashboardPage() {
     () => getNextAppointment(schedule),
     [schedule],
   );
+  const pending = useMemo(() => pendingExams(exams), [exams]);
   const todayTip = useMemo(() => tipOfTheDay(), []);
-  const swipeTips = useMemo(() => {
-    const rest = HEALTH_TIPS.filter((t) => t.id !== todayTip.id);
-    return [todayTip, ...rest];
-  }, [todayTip]);
+  const swipeSlides = useMemo(
+    () => [
+      ...BP_SCALE_SLIDES.map((s) => ({ kind: "scale" as const, ...s })),
+      {
+        kind: "tip" as const,
+        id: todayTip.id,
+        title: todayTip.title,
+        body: todayTip.body,
+      },
+    ],
+    [todayTip],
+  );
   const [tipIndex, setTipIndex] = useState(0);
   const tipsRailRef = useRef<HTMLDivElement>(null);
 
@@ -90,12 +107,12 @@ export function DashboardPage() {
       const gap = 12;
       const w = slide.offsetWidth + gap;
       const idx = Math.round(el.scrollLeft / w);
-      setTipIndex(Math.max(0, Math.min(swipeTips.length - 1, idx)));
+      setTipIndex(Math.max(0, Math.min(swipeSlides.length - 1, idx)));
     }
 
     el.addEventListener("scroll", onScroll, { passive: true });
     return () => el.removeEventListener("scroll", onScroll);
-  }, [swipeTips.length]);
+  }, [swipeSlides.length]);
 
   function goToTip(index: number) {
     const el = tipsRailRef.current;
@@ -304,6 +321,17 @@ export function DashboardPage() {
             <p className="line-clamp-2 text-[11px] leading-snug text-secondary sm:text-body-sm">
               {nextAppointment.detail}
             </p>
+            {pending.length > 0 ? (
+              <p className="mt-1 text-[11px] font-semibold leading-snug text-warning-text sm:text-body-sm">
+                {pending.length === 1
+                  ? "1 examen por entregar"
+                  : `${pending.length} exámenes por entregar`}
+              </p>
+            ) : exams.length > 0 ? (
+              <p className="mt-1 text-[11px] font-medium leading-snug text-success sm:text-body-sm">
+                Exámenes al día
+              </p>
+            ) : null}
           </Link>
         </section>
 
@@ -312,11 +340,11 @@ export function DashboardPage() {
             <div className="flex items-center gap-2">
               <Lightbulb size={20} className="text-primary" weight="fill" />
               <h3 className="text-body-lg font-semibold sm:text-headline-md">
-                Tips saludables
+                Cómo se mide
               </h3>
             </div>
             <p className="text-[11px] text-outline">
-              {tipIndex + 1}/{swipeTips.length} · desliza
+              AHA/ACC 2026 · {tipIndex + 1}/{swipeSlides.length}
             </p>
           </div>
 
@@ -324,29 +352,49 @@ export function DashboardPage() {
             ref={tipsRailRef}
             className="-mx-container-margin flex snap-x snap-mandatory gap-3 overflow-x-auto px-container-margin pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
           >
-            {swipeTips.map((tip, i) => (
-              <article
-                key={tip.id}
-                data-tip-slide
-                className="glass w-[min(100%,20rem)] shrink-0 snap-center rounded-xl p-3 sm:w-[22rem] sm:p-4"
-              >
-                <p className="text-[10px] font-semibold uppercase tracking-[0.05em] text-primary">
-                  {i === 0 ? "Tip del día" : `Tip ${i + 1}`}
-                </p>
-                <h4 className="mt-1 text-body-lg font-semibold text-on-surface">
-                  {tip.title}
-                </h4>
-                <p className="mt-1 text-body-sm leading-relaxed text-secondary">
-                  {tip.body}
-                </p>
-              </article>
-            ))}
+            {swipeSlides.map((slide) =>
+              slide.kind === "scale" ? (
+                <article
+                  key={slide.status}
+                  data-tip-slide
+                  className={`w-[min(100%,20rem)] shrink-0 snap-center rounded-xl p-3 sm:w-[22rem] sm:p-4 ${statusContainerClass(slide.status)}`}
+                >
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.05em] opacity-80">
+                    Escala 2026
+                    {latest && status === slide.status ? " · tu última" : ""}
+                  </p>
+                  <h4 className="mt-1 text-body-lg font-semibold">{slide.title}</h4>
+                  <p className="mt-0.5 text-[12px] font-semibold opacity-90">
+                    {slide.range}
+                  </p>
+                  <p className="mt-1 text-body-sm leading-relaxed opacity-85">
+                    {slide.body}
+                  </p>
+                </article>
+              ) : (
+                <article
+                  key={slide.id}
+                  data-tip-slide
+                  className="glass w-[min(100%,20rem)] shrink-0 snap-center rounded-xl p-3 sm:w-[22rem] sm:p-4"
+                >
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.05em] text-primary">
+                    Tip del día
+                  </p>
+                  <h4 className="mt-1 text-body-lg font-semibold text-on-surface">
+                    {slide.title}
+                  </h4>
+                  <p className="mt-1 text-body-sm leading-relaxed text-secondary">
+                    {slide.body}
+                  </p>
+                </article>
+              ),
+            )}
           </div>
 
           <div className="flex items-center justify-center gap-1.5 pt-1">
-            {swipeTips.map((tip, i) => (
+            {swipeSlides.map((slide, i) => (
               <button
-                key={tip.id}
+                key={slide.kind === "scale" ? slide.status : slide.id}
                 type="button"
                 aria-label={`Ir al tip ${i + 1}`}
                 onClick={() => goToTip(i)}

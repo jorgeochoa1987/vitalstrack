@@ -290,6 +290,38 @@ export function AppointmentsPage() {
                 {formatMeasureTime(appointmentTime || "09:00")}
                 {appointmentAddress ? ` · ${appointmentAddress}` : ""}
               </p>
+              {pending.length > 0 ? (
+                <div className="mt-3 rounded-lg bg-black/15 px-3 py-2">
+                  <p className="text-[11px] font-semibold text-white">
+                    {pending.length === 1
+                      ? "1 examen por entregar"
+                      : `${pending.length} exámenes por entregar`}
+                  </p>
+                  <ul className="mt-1 space-y-0.5">
+                    {pending.slice(0, 3).map((e) => (
+                      <li
+                        key={e.id}
+                        className="truncate text-[11px] text-on-primary-container/85"
+                      >
+                        · {e.title}
+                      </li>
+                    ))}
+                    {pending.length > 3 ? (
+                      <li className="text-[11px] text-on-primary-container/70">
+                        · y {pending.length - 3} más
+                      </li>
+                    ) : null}
+                  </ul>
+                </div>
+              ) : exams.length > 0 ? (
+                <p className="mt-3 text-[11px] font-medium text-on-primary-container/90">
+                  Exámenes al día · listos para la cita
+                </p>
+              ) : (
+                <p className="mt-3 text-[11px] text-on-primary-container/70">
+                  Sin exámenes pendientes registrados
+                </p>
+              )}
               <p className="mt-2 text-[11px] text-on-primary-container/70">
                 {syncing
                   ? "Sincronizando…"

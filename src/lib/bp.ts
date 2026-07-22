@@ -57,6 +57,61 @@ export function statusValueClass(status: BpStatus): string {
   }
 }
 
+export function statusContainerClass(status: BpStatus): string {
+  switch (status) {
+    case "normal":
+      return "border border-success-border bg-success-container text-success";
+    case "elevated":
+      return "border border-warning/40 bg-warning-container text-warning-text";
+    case "stage1":
+      return "border border-stage1-border bg-stage1-container text-stage1";
+    case "stage2":
+      return "border border-error/30 bg-error-container text-on-error-container";
+    case "crisis":
+      return "border border-crisis/40 bg-crisis-container text-crisis";
+  }
+}
+
+/** Escala AHA/ACC 2025 · guía clínica 2026 (slides). */
+export const BP_SCALE_SLIDES: {
+  status: BpStatus;
+  title: string;
+  range: string;
+  body: string;
+}[] = [
+  {
+    status: "normal",
+    title: "Normal",
+    range: "PAS <120 y PAD <80",
+    body: "Mantén hábitos saludables y sigue midiendo según tu plan.",
+  },
+  {
+    status: "elevated",
+    title: "Elevada",
+    range: "PAS 120–129 y PAD <80",
+    body: "No es hipertensión aún, pero conviene reducir sal, moverte y vigilar.",
+  },
+  {
+    status: "stage1",
+    title: "Estadio 1",
+    range: "PAS 130–139 o PAD 80–89",
+    body: "Hipertensión estadio 1. Habla con tu médico sobre estilo de vida y seguimiento.",
+  },
+  {
+    status: "stage2",
+    title: "Estadio 2",
+    range: "PAS ≥140 o PAD ≥90",
+    body: "Hipertensión estadio 2. Suele requerir evaluación y, a menudo, tratamiento.",
+  },
+  {
+    status: "crisis",
+    title: "HTA severa",
+    range: "PAS ≥180 o PAD ≥120",
+    body: "Cifras de alerta. Si hay síntomas, busca atención urgente. Repite en reposo.",
+  },
+];
+
+
 export function formatBp(systolic: number, diastolic: number): string {
   return `${systolic}/${diastolic}`;
 }
