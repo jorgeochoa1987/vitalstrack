@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { MeasurementForm } from "../components/MeasurementForm";
+import { MeasurementRules } from "../components/MeasurementRules";
 import { Toast } from "../components/Toast";
 import { TopAppBar } from "../components/TopAppBar";
 import { useMeasurements } from "../context/MeasurementsContext";
@@ -35,14 +36,17 @@ export function NewRecordPage() {
         backTo={isEdit ? "/historial" : "/"}
       />
       <main className="mx-auto max-w-2xl px-container-margin py-stack-md pb-32">
-        <div className="mb-stack-lg">
-          <h2 className="mb-base text-headline-lg-mobile font-bold">
-            Introduce tus datos
-          </h2>
-          <p className="text-body-sm text-secondary">
-            Asegúrate de estar en reposo al menos 5 minutos antes de realizar la
-            medición para obtener resultados precisos.
-          </p>
+        <div className="mb-stack-lg space-y-stack-md">
+          <div>
+            <h2 className="mb-base text-headline-lg-mobile font-bold">
+              Introduce tus datos
+            </h2>
+            <p className="text-body-sm text-secondary">
+              Foto la pantalla del monitor, anota los valores y guarda. Una
+              medición aislada no diagnostica hipertensión.
+            </p>
+          </div>
+          {!isEdit && <MeasurementRules />}
         </div>
 
         <MeasurementForm

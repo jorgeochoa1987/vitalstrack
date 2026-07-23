@@ -21,6 +21,7 @@ import {
   formatDateTime,
   getBpStatus,
   inLastDays,
+  statusAdvice,
   statusContainerClass,
   weekAgo,
 } from "../lib/bp";
@@ -223,6 +224,10 @@ export function DashboardPage() {
                 </p>
               </div>
             </div>
+
+            <p className="mt-3 text-[11px] leading-snug text-on-surface-variant sm:text-body-sm">
+              {statusAdvice(status)}
+            </p>
 
             <div className="pointer-events-none absolute right-[-20px] bottom-[-20px] opacity-[0.03]">
               <Heart size={140} weight="fill" />

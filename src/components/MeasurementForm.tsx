@@ -126,7 +126,9 @@ export function MeasurementForm({
   function clearPhoto() {
     if (photoPreview?.startsWith("blob:")) URL.revokeObjectURL(photoPreview);
     setPhotoFile(null);
-    setPhotoPreview(isEdit ? measurement?.photoUrl : undefined);
+    setPhotoPreview(undefined);
+    if (cameraRef.current) cameraRef.current.value = "";
+    if (galleryRef.current) galleryRef.current.value = "";
   }
 
   async function onSubmit(e: FormEvent) {
@@ -198,7 +200,7 @@ export function MeasurementForm({
             <button
               type="button"
               onClick={clearPhoto}
-              className="absolute top-2 right-2 flex h-9 w-9 items-center justify-center rounded-full bg-inverse-surface/80 text-inverse-on-surface"
+              className="absolute top-2 right-2 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-inverse-surface/80 text-inverse-on-surface shadow-md transition-transform active:scale-95"
               aria-label="Quitar foto"
             >
               <X size={18} weight="bold" />

@@ -2,6 +2,7 @@ import { X } from "@phosphor-icons/react";
 import { useEffect } from "react";
 import type { Measurement } from "../types";
 import { MeasurementForm } from "./MeasurementForm";
+import { MeasurementRules } from "./MeasurementRules";
 
 interface RecordModalProps {
   open: boolean;
@@ -76,7 +77,8 @@ export function RecordModal({
           </button>
         </div>
 
-        <div className="overflow-y-auto px-container-margin py-stack-md">
+        <div className="space-y-stack-md overflow-y-auto px-container-margin py-stack-md">
+          {!isEdit && <MeasurementRules compact />}
           <MeasurementForm
             key={measurement?.id ?? "new"}
             measurement={measurement}

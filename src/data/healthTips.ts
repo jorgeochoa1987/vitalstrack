@@ -22,6 +22,11 @@ export const HEALTH_TIPS: HealthTip[] = [
     body: "Toma la presión a la hora que configuraste. Evita cafeína, ejercicio o fumar 30 minutos antes de medir.",
   },
   {
+    id: "average",
+    title: "Haz 2 o 3 tomas y promedia",
+    body: "Mide dos o tres veces con 1 minuto de diferencia y quédate con el promedio. Una sola lectura alta no diagnostica hipertensión.",
+  },
+  {
     id: "salt",
     title: "Menos sal, más control",
     body: "Reducir el sodio (sal de mesa, embutidos, snacks) ayuda a bajar la presión. Prefiere hierbas y especias al cocinar.",

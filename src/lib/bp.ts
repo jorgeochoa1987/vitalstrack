@@ -32,6 +32,22 @@ export function statusLabel(status: BpStatus): string {
   }
 }
 
+/** Mensaje breve según la categoría (no sustituye consejo médico). */
+export function statusAdvice(status: BpStatus): string {
+  switch (status) {
+    case "normal":
+      return "Dentro del rango objetivo. Sigue midiendo con buena técnica.";
+    case "elevated":
+      return "Un poco por encima del ideal. Una toma aislada no es diagnóstico; vigila el promedio.";
+    case "stage1":
+      return "Cifras de estadio 1. Si se repiten en varios días, coméntalo con tu médico.";
+    case "stage2":
+      return "Cifras altas. Repite en reposo y consulta si se mantienen ≥140/90.";
+    case "crisis":
+      return "Cifras de alerta. Si hay síntomas (dolor de pecho, falta de aire), busca atención urgente.";
+  }
+}
+
 export function statusBarClass(status: BpStatus): string {
   switch (status) {
     case "normal":
